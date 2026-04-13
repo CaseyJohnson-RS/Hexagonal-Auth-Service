@@ -1,0 +1,38 @@
+# Python cache / bytecode
+**/__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# Type checking / testing / tooling caches
+.mypy_cache/
+.pytest_cache/
+.cache/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+**/README.md
+
+# Project configs (not needed in image)
+docker-compose*.yml
+Makefile
+
+# Tests
+tests/
+
+# OS files
+.DS_Store
+Thumbs.db
