@@ -7,11 +7,11 @@ max_password_len = 255
 
 def validate_password(password: str) -> str:
     """
-    Валидатор пароля для домена.
+    Domain password validator.
 
-    - Проверяет длину пароля
-    - Возвращает пароль
-    - Бросает исключение PasswordValidationError
+    - Checks password length
+    - Returns the validated password
+    - Raises PasswordValidationError on failure
     """
     if not isinstance(password, str):
         raise PasswordValidationError("Password must be a string")
@@ -28,17 +28,17 @@ def validate_password(password: str) -> str:
             f"Password must not exceed {max_password_len} characters"
         )
 
-    # TODO: добавить проверку сложности пароля (цифры, символы, регистр и т.д.)
+    # TODO: add password complexity checks (digits, symbols, mixed case, etc.)
 
     return password
 
 
 def validate_hash_password(password: str) -> str:
     """
-    Валидатор пароля для домена.
+    Domain password validator that returns a hash.
 
-    - Проверяет длину пароля
-    - Возвращает хэш пароля
-    - Бросает исключение PasswordValidationError
+    - Checks password length
+    - Returns the hashed password
+    - Raises PasswordValidationError on failure
     """
     return hash_password(validate_password(password))

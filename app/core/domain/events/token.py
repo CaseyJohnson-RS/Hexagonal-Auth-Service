@@ -4,7 +4,7 @@ from . import DomainEvent
 
 
 class TokenEvent(DomainEvent):
-    """Событие токена"""
+    """Base token event"""
 
     user_id: UUID
     token_id: UUID
@@ -14,7 +14,7 @@ class TokenEvent(DomainEvent):
 
 
 class RefreshTokenCreated(TokenEvent):
-    """Создан refresh token (создана новая рабочая сессия)"""
+    """Refresh token created (new session started)"""
 
     client_ip: str | None = None
     user_agent: str | None = None
@@ -22,6 +22,6 @@ class RefreshTokenCreated(TokenEvent):
 
 
 class RefreshTokenRevoked(TokenEvent):
-    """Отзыв рефреш токена (сессии)"""
+    """Refresh token revoked (session terminated)"""
 
     pass

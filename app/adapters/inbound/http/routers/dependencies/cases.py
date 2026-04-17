@@ -32,7 +32,7 @@ from app.adapters.nexus import (
 T = TypeVar("T")
 
 
-# Маппинг типов на провайдеры
+# Port type -> provider mapping
 DEPENDENCY_PROVIDERS: dict[Type, Callable] = {
     TransactionPort: get_transaction,
     UserRepositoryPort: get_user_repo,
@@ -48,34 +48,33 @@ DEPENDENCY_PROVIDERS: dict[Type, Callable] = {
 
 def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
     """
-    Автоматически создает FastAPI dependency factory для use case.
-    
-    Анализирует __init__ use case, находит типы параметров и подставляет
-    соответствующие провайдеры из DEPENDENCY_PROVIDERS.
-    
+    Automatically build a FastAPI dependency factory for a use case.
+
+    Inspects the use case __init__ signature, resolves parameter types
+    to the corresponding providers from DEPENDENCY_PROVIDERS.
+
     Args:
-        use_case_class: Класс use case для которого нужно создать фабрику
-        
+        use_case_class: The use case class to create a factory for.
+
     Returns:
-        Функция-фабрика с правильными Depends() для использования в FastAPI
-        
+        A factory function with proper Depends() bindings for FastAPI.
+
     Raises:
-        ValueError: Если для какого-то параметра не найден провайдер
-        
+        ValueError: If no provider is found for a parameter type.
+
     Example:
         >>> get_register_use_case = build_use_case(RegisterUserCase)
-        >>> # В роуте:
         >>> @router.post("/register")
         >>> async def register(
         >>>     use_case: RegisterUserCase = Depends(get_register_use_case)
         >>> ):
         >>>     ...
     """
-    # Получаем сигнатуру __init__
+    # Get __init__ signature
     sig = signature(use_case_class.__init__)
     type_hints = get_type_hints(use_case_class.__init__)
     
-    # Собираем параметры для фабрики
+    # Collect parameters for the factory
     factory_params = []
     param_names = []
     
@@ -83,7 +82,7 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
         if param_name == "self":
             continue
         
-        # Получаем тип параметра
+        # Get parameter type
         param_type = type_hints.get(param_name)
         
         if param_type is None:
@@ -92,7 +91,7 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
                 f"has no type annotation"
             )
         
-        # Ищем провайдер для этого типа
+        # Find a provider for this type
         provider = DEPENDENCY_PROVIDERS.get(param_type)
         
         if provider is None:
@@ -102,7 +101,7 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
                 f"Available providers: {list(DEPENDENCY_PROVIDERS.keys())}"
             )
         
-        # Создаем параметр с Depends()
+        # Create parameter with Depends()
         factory_params.append(
             Parameter(
                 name=param_name,
@@ -113,11 +112,11 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
         )
         param_names.append(param_name)
     
-    # Создаем функцию-фабрику
+    # Create the factory function
     def factory(**kwargs) -> T:
         return use_case_class(**kwargs)
     
-    # Подменяем сигнатуру
+    # Override the signature
     from inspect import Signature
     factory.__signature__ = Signature(
         parameters=factory_params,

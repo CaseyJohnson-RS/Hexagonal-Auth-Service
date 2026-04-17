@@ -6,10 +6,10 @@ _EMAIL_REGEX = re.compile(r"[^@]+@[^@]+\.[^@]+")
 
 def validate_email(email: str) -> str:
     """
-    Валидатор email для домена.
+    Domain email validator.
 
-    - Возвращает очищенный (strip + lower) email
-    - Бросает исключения EmailValidationError
+    - Returns a sanitized (strip + lower) email
+    - Raises EmailValidationError on failure
     """
     if email is None or email == "":
         raise EmailValidationError("Email is required")

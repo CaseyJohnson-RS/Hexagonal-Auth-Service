@@ -40,7 +40,7 @@ from .dependencies.security import (
 router = APIRouter()
 
 
-# Создаем фабрики при импорте модуля
+# Build use case factories at import time
 get_register_use_case = build_use_case(RegisterUserCase)
 get_verify_email_use_case = build_use_case(VerifyEmailCase)
 get_login_use_case = build_use_case(LoginUserCase)

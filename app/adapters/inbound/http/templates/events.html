@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>События системы</title>
+    <title>System Events</title>
     <style>
         * {
             margin: 0;
@@ -197,7 +197,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>📊 События системы авторизации</h1>
+        <h1>Auth System Events</h1>
 
         {% if events %}
             <div class="events-list">
@@ -228,23 +228,23 @@
 
             <div class="pagination">
                 {% if has_prev %}
-                    <a href="?page={{ prev_page }}">← Предыдущая</a>
+                    <a href="?page={{ prev_page }}">← Previous</a>
                 {% else %}
-                    <a class="disabled">← Предыдущая</a>
+                    <a class="disabled">← Previous</a>
                 {% endif %}
 
-                <span class="page-number">Страница {{ page }}</span>
+                <span class="page-number">Page {{ page }}</span>
 
                 {% if has_next %}
-                    <a href="?page={{ next_page }}">Следующая →</a>
+                    <a href="?page={{ next_page }}">Next →</a>
                 {% else %}
-                    <a class="disabled">Следующая →</a>
+                    <a class="disabled">Next →</a>
                 {% endif %}
             </div>
         {% else %}
             <div class="empty-state">
                 <div class="empty-state-icon">📭</div>
-                <div class="empty-state-text">Событий не найдено</div>
+                <div class="empty-state-text">No events found</div>
             </div>
         {% endif %}
     </div>

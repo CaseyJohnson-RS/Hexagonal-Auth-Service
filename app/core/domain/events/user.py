@@ -4,7 +4,7 @@ from . import DomainEvent
 
 
 class UserEvent(DomainEvent):
-    """Событие пользователя"""
+    """Base user event"""
 
     user_id: UUID
 
@@ -13,7 +13,7 @@ class UserEvent(DomainEvent):
 
 
 class UserCreated(UserEvent):
-    """Произошло создание пользователя"""
+    """User account created"""
 
     email: str
 
@@ -22,13 +22,13 @@ class UserCreated(UserEvent):
 
 
 class UserActivated(UserEvent):
-    """Активация пользователя"""
+    """User account activated"""
 
     pass
 
 
 class UserDeactivated(UserEvent):
-    """Деактивация пользователя"""
+    """User account deactivated"""
 
     pass
 
@@ -37,14 +37,14 @@ class UserDeactivated(UserEvent):
 
 
 class UserEmailVerificationRequested(UserEvent):
-    """Создан токен для подтверждения почты"""
+    """Email verification token issued"""
 
     email: str
     token: str
 
 
 class UserEmailVerified(UserEvent):
-    """Почта пользователя успешно подтверждена"""
+    """User email successfully verified"""
 
     email: str
 
@@ -53,19 +53,19 @@ class UserEmailVerified(UserEvent):
 
 
 class UserPasswordChanged(UserEvent):
-    """Пользователь сменил пароль"""
+    """User password changed"""
 
     pass
 
 
 class UserPasswordRecoverRequested(UserEvent):
-    """Создан токен для восстанвления пароля"""
+    """Password recovery token issued"""
 
     email: str
     token: str
 
 
 class UserPasswordRecovered(UserEvent):
-    """Пароль восстановлен"""
+    """Password successfully recovered"""
 
     pass

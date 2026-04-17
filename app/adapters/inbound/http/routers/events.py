@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="app/adapters/inbound/http/templates")
 
 
 def get_event_timestamp(event) -> str:
-    """Извлекает timestamp из события"""
+    """Extract timestamp from an event"""
     for attr in ['timestamp', 'created_at', 'occurred_at']:
         if hasattr(event, attr):
             ts = getattr(event, attr)
@@ -25,7 +25,7 @@ def get_event_timestamp(event) -> str:
 
 
 def serialize_value(value: Any) -> str:
-    """Сериализует значение в читаемую строку"""
+    """Serialize a value into a human-readable string"""
     if isinstance(value, datetime):
         return value.strftime('%Y-%m-%d %H:%M:%S')
     elif isinstance(value, (list, tuple)):
@@ -44,8 +44,8 @@ def serialize_value(value: Any) -> str:
 
 def event_to_dict(event) -> dict[str, str]:
     """
-    Преобразует событие в словарь ключ-значение для красивого отображения.
-    Поддерживает объекты с __dict__
+    Convert an event into a key-value dict for display.
+    Supports objects with __dict__.
     """
     result = {}
     
@@ -63,19 +63,19 @@ def event_to_dict(event) -> dict[str, str]:
 @router.get("/", response_class=HTMLResponse)
 async def events_page(
     request: Request,
-    page: int = Query(default=1, ge=1, description="Номер страницы"),
+    page: int = Query(default=1, ge=1, description="Page number"),
     event_queue: EventQueuePort = Depends(get_event_queue),
 ):
     """
-    Отображает события с пагинацией (по 3 на странице)
+    Render events page with pagination.
     """
     per_page = 10
     offset = (page - 1) * per_page
     
-    # Получаем события
+    # Fetch events
     events = event_queue.get(offset=offset, limit=per_page, desc=True)
-    
-    # Подготавливаем данные для шаблона
+
+    # Prepare template data
     events_data = [
         {
             'type': event.__class__.__name__,
@@ -85,7 +85,7 @@ async def events_page(
         for event in events
     ]
     
-    # Проверяем, есть ли следующая страница
+    # Check if next page exists
     next_page_events = event_queue.get(offset=offset + per_page, limit=1)
     has_next = len(next_page_events) > 0
     has_prev = page > 1

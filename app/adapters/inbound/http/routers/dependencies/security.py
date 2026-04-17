@@ -14,7 +14,7 @@ def get_access_token(
 
 
 async def get_client_ip(request: Request) -> str:
-    """Извлекает IP-адрес клиента"""
+    """Extract the client IP address"""
     forwarded_for = request.headers.get("X-Forwarded-For")
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
@@ -32,7 +32,7 @@ async def get_client_ip(request: Request) -> str:
 async def get_user_agent(
     user_agent: Optional[str] = Header(None, alias="User-Agent")
 ) -> str:
-    """Извлекает User-Agent"""
+    """Extract the User-Agent header"""
     return user_agent or "unknown"
 
 
@@ -42,12 +42,12 @@ async def get_location(
     accept_language: Optional[str] = Header(None, alias="Accept-Language"),  # Fallback
 ) -> Optional[str]:
     """
-    Пытается определить локацию из заголовков (без внешних запросов).
+    Attempt to determine the client location from headers (no external requests).
 
-    Работает если:
-    - За Cloudflare (добавляет CF-IPCountry)
-    - Nginx с GeoIP модулем (добавляет X-Country-Code)
-    - Fallback на Accept-Language
+    Works when behind:
+    - Cloudflare (provides CF-IPCountry)
+    - Nginx with GeoIP module (provides X-Country-Code)
+    - Falls back to Accept-Language
     """
     # Cloudflare country code
     if cf_ipcountry and cf_ipcountry != "XX":
@@ -57,7 +57,7 @@ async def get_location(
     if x_country_code:
         return x_country_code
 
-    # Accept-Language как последний шанс
+    # Accept-Language as a last resort
     if accept_language:
         # "en-US,en;q=0.9" -> "US"
         parts = accept_language.split(",")[0].split("-")
