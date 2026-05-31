@@ -11,7 +11,7 @@ endif
 migrate:
 	docker compose run --rm migrate
 
-# Project
+# Service
 
 run: migrate
 	docker compose up auth
@@ -23,3 +23,10 @@ test-unit:
 
 test-integration: migrate
 	uv run --env-file .env.test pytest tests/integration
+
+test-all: test-unit test-integration
+
+# Linting
+
+lint:
+	uv run ruff check .

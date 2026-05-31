@@ -8,8 +8,12 @@ from app.core.domain.entities.one_time_token import OneTimeToken, OneTimeTokenPu
 from app.core.utils.time import utc_now
 from app.core.utils.security import hash_token
 from app.adapters.outbound.persistence.sqlalchemy.repositories.user import UserRepository
-from app.adapters.outbound.persistence.sqlalchemy.repositories.refresh_token import RefreshTokenRepository
-from app.adapters.outbound.persistence.sqlalchemy.repositories.one_time_token import OneTimeTokenRepository
+from app.adapters.outbound.persistence.sqlalchemy.repositories.refresh_token import (
+    RefreshTokenRepository,
+)
+from app.adapters.outbound.persistence.sqlalchemy.repositories.one_time_token import (
+    OneTimeTokenRepository,
+)
 
 
 def make_user(

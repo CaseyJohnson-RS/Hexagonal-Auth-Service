@@ -1,12 +1,10 @@
 import pytest
-from uuid import uuid4
 from datetime import timedelta
 
 from app.application.exceptions.concurrency import ConcurrencyError
 from app.core.domain.entities.one_time_token import OneTimeTokenPurpose
 from app.core.utils.security import hash_token
-from app.core.utils.time import utc_now
-from tests.integration.repositories.conftest import make_user, make_one_time_token
+from tests.integration.repositories.conftest import make_one_time_token
 
 
 class TestOneTimeTokenRepositorySave:
@@ -154,7 +152,8 @@ class TestOneTimeTokenRepositoryGetByString:
         await ott_repo.save(ve)
         await ott_repo.save(rp)
         assert (await ott_repo.get_by_string("dual-ve")).purpose == OneTimeTokenPurpose.VERIFY_EMAIL
-        assert (await ott_repo.get_by_string("dual-rp")).purpose == OneTimeTokenPurpose.RECOVER_PASSWORD
+        result = await ott_repo.get_by_string("dual-rp")
+        assert result.purpose == OneTimeTokenPurpose.RECOVER_PASSWORD
 
 
 class TestOneTimeTokenRepositoryDelete:
@@ -191,7 +190,9 @@ class TestOneTimeTokenRepositoryDelete:
         assert await ott_repo.get_by_string("keep-this") is not None
         assert await ott_repo.get_by_string("delete-this") is None
 
-    async def test_delete_user_with_tokens_raises_integrity_error(self, user_repo, ott_repo, saved_user):
+    async def test_delete_user_with_tokens_raises_integrity_error(
+        self, user_repo, ott_repo, saved_user
+    ):
         # UserRepository.delete() uses raw SQL DELETE — no ORM cascade.
         # PostgreSQL FK constraint blocks deletion if child rows exist.
         from sqlalchemy.exc import IntegrityError

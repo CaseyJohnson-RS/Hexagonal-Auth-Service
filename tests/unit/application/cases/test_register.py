@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import AsyncMock, call
 
 from app.application.cases.user.register import RegisterUserCase
 from app.application.dto.user import RegisterUserInputDTO

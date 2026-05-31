@@ -138,7 +138,7 @@ class RefreshToken:
 
     def use(self) -> None:
         """
-        Mark the token as used for refresh or rotation.  
+        Mark the token as used for refresh or rotation.
         This revokes the token and prevents reuse.
 
         Raises:

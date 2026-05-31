@@ -1,4 +1,3 @@
-import pytest
 from app.core.domain.events.user import UserEmailVerificationRequested
 from tests.integration.api.conftest import EMAIL, PASSWORD, get_verify_token
 

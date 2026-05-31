@@ -1,4 +1,3 @@
-import pytest
 
 from app.core.domain.services.refresh_token_security_policy import (
     RefreshTokenSecurityPolicy,

@@ -48,15 +48,15 @@ def event_to_dict(event) -> dict[str, str]:
     Supports objects with __dict__.
     """
     result = {}
-    
+
     if hasattr(event, '__dict__'):
         for key, value in event.__dict__.items():
             if key.startswith('_'):
                 continue
             result[key] = serialize_value(value)
         return result
-    
-    
+
+
     return result if result else {"raw": str(event)}
 
 
@@ -71,7 +71,7 @@ async def events_page(
     """
     per_page = 10
     offset = (page - 1) * per_page
-    
+
     # Fetch events
     events = event_queue.get(offset=offset, limit=per_page, desc=True)
 
@@ -84,12 +84,12 @@ async def events_page(
         }
         for event in events
     ]
-    
+
     # Check if next page exists
     next_page_events = event_queue.get(offset=offset + per_page, limit=1)
     has_next = len(next_page_events) > 0
     has_prev = page > 1
-    
+
     return templates.TemplateResponse(
         "events.html",
         {

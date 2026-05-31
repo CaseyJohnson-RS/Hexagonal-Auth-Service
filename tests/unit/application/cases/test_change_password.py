@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import MagicMock
 from uuid import uuid4
 
 from app.application.cases.user.change_password import ChangePasswordCase

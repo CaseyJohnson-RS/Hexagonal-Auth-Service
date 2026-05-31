@@ -42,7 +42,7 @@ class RefreshTokenCase(UseCase):
         Execute token refresh process.
 
         Args:
-            data (RefreshTokenInputDTO): Input containing the refresh token string 
+            data (RefreshTokenInputDTO): Input containing the refresh token string
                 and optional client metadata.
 
         Raises:

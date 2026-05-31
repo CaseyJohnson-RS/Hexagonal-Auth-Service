@@ -73,34 +73,34 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
     # Get __init__ signature
     sig = signature(use_case_class.__init__)
     type_hints = get_type_hints(use_case_class.__init__)
-    
+
     # Collect parameters for the factory
     factory_params = []
     param_names = []
-    
+
     for param_name, param in sig.parameters.items():
         if param_name == "self":
             continue
-        
+
         # Get parameter type
         param_type = type_hints.get(param_name)
-        
+
         if param_type is None:
             raise ValueError(
                 f"Parameter '{param_name}' in {use_case_class.__name__}.__init__ "
                 f"has no type annotation"
             )
-        
+
         # Find a provider for this type
         provider = DEPENDENCY_PROVIDERS.get(param_type)
-        
+
         if provider is None:
             raise ValueError(
                 f"No provider found for type {param_type.__name__} "
                 f"(parameter '{param_name}' in {use_case_class.__name__}.__init__). "
                 f"Available providers: {list(DEPENDENCY_PROVIDERS.keys())}"
             )
-        
+
         # Create parameter with Depends()
         factory_params.append(
             Parameter(
@@ -111,11 +111,11 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
             )
         )
         param_names.append(param_name)
-    
+
     # Create the factory function
     def factory(**kwargs) -> T:
         return use_case_class(**kwargs)
-    
+
     # Override the signature
     from inspect import Signature
     factory.__signature__ = Signature(
@@ -123,5 +123,5 @@ def build_use_case(use_case_class: Type[T]) -> Callable[..., T]:
         return_annotation=use_case_class,
     )
     factory.__name__ = f"get_{use_case_class.__name__}"
-    
+
     return factory

@@ -1,4 +1,3 @@
-import pytest
 
 
 EMAIL = "login_test@example.com"

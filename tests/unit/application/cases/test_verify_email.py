@@ -1,5 +1,4 @@
 import pytest
-from uuid import uuid4
 
 from app.application.cases.user.verify_email import VerifyEmailCase
 from app.application.dto.user import VerifyEmailInputDTO

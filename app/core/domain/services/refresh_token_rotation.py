@@ -27,7 +27,8 @@ class RefreshTokenRotationService:
             access_token_issuer (AccessTokenIssuerPort): Service to issue access tokens.
 
         Returns:
-            Tuple[RefreshToken, str, str]: New refresh token, raw refresh token string, and new access token.
+            Tuple[RefreshToken, str, str]: New refresh token, raw refresh token string,
+                and new access token.
         """
         # 1. Create new refresh token
         new_rt, new_rt_str = RefreshToken.create(

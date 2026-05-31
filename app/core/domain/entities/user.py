@@ -101,7 +101,7 @@ class User:
                 token=token_string
             )
         )
-    
+
     def request_password_recover(self, token_string: str) -> None:
         if not self.is_email_verified:
             raise UserError("Email is not verified")

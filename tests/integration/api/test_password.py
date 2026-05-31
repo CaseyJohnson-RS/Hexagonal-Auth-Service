@@ -1,4 +1,3 @@
-import pytest
 from tests.integration.api.conftest import EMAIL, PASSWORD, get_recover_token
 
 
