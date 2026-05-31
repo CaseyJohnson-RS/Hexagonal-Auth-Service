@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 .env*
 !.env.example
+!.env.test
 
 # IDEs
 .mypy_cache/

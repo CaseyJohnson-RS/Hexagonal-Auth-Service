@@ -2,12 +2,6 @@
 
 # DB
 
-db-up:
-	docker compose up -d postgres
-
-db-stop:
-	docker compose stop postgres
-
 revision:
 ifndef DESCRIPTION
 	$(error DESCRIPTION is required)
@@ -19,10 +13,13 @@ migrate:
 
 # Project
 
-run: db-up migrate
-	docker compose up auth	
+run: migrate
+	docker compose up auth
 
 # Testing
 
 test-unit:
-	uv run --env-file .env.example pytest
+	uv run --env-file .env.example pytest tests/unit
+
+test-integration: migrate
+	uv run --env-file .env.test pytest tests/integration

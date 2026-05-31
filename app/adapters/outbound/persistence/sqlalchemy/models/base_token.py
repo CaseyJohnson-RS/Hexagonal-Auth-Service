@@ -17,7 +17,7 @@ class BaseToken(Base):
     )
     token_hash: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
