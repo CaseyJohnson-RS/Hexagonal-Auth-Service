@@ -4,6 +4,7 @@
 ![Python](https://img.shields.io/badge/Python_3.10-3776AB?style=flat&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
 
 Сервис аутентификации на **FastAPI**, построенный по гексагональной архитектуре
 (Ports & Adapters). Доменное ядро не зависит ни от одного фреймворка — вся
@@ -55,7 +56,7 @@ graph LR
   subgraph Outbound["Outbound Adapters"]
     REPO["SQLAlchemy Repos"]
     JWTA["JWT Issuer / Verifier"]
-    BUS["In-Memory Event Bus"]
+    BUS["Redis EventQueue / InMemory NotificationQueue"]
     TX["Transaction Manager"]
   end
   HTTP --> UC
@@ -76,7 +77,8 @@ graph LR
   получает порты через конструктор, выполняется в транзакции и публикует
   события после коммита.
 - **Adapters** (`app/adapters/`) — конкретные реализации портов: inbound (HTTP
-  через FastAPI) и outbound (PostgreSQL через SQLAlchemy, JWT, in-memory шина).
+  через FastAPI) и outbound (PostgreSQL через SQLAlchemy, JWT, Redis EventQueue
+  для аудит-событий, InMemory NotificationQueue для токенных уведомлений).
 - **Composition Root** (`app/adapters/nexus.py`) — единственное место, где порты
   связываются с адаптерами.
 
@@ -89,7 +91,8 @@ graph LR
 | ORM | SQLAlchemy 2 (async) |
 | Миграции | Alembic |
 | Токены | PyJWT (access, HS256) + refresh/одноразовые в БД (SHA-256) |
-| Хэш пароля | passlib + bcrypt |
+| Хэш пароля | bcrypt (прямой вызов) |
+| Шина событий | Redis (DomainEvent, персистентно) + in-memory (NotificationEvent) |
 | Валидация / конфиг | Pydantic v2, pydantic-settings |
 | Контейнеризация | Docker, Docker Compose |
 | Зависимости | uv |
@@ -161,10 +164,10 @@ docker compose up
 
 ```bash
 # поднять тестовую БД
-docker compose -f docker-compose.yaml up -d db
+docker compose up -d postgres
 
 # прогнать всё
-uv run pytest
+make test-all
 ```
 
 Тесты покрывают все уровни:
@@ -189,7 +192,9 @@ app/
 │   ├── inbound/http/    # FastAPI-роутеры, схемы запросов/ответов
 │   ├── outbound/        # SQLAlchemy-репозитории, JWT, in-memory шина
 │   └── nexus.py         # composition root (DI)
-├── infrastructure/db/   # async-фабрика сессий PostgreSQL
+├── infrastructure/
+│   ├── db/          # async-фабрика сессий PostgreSQL
+│   └── redis/       # фабрика Redis-клиента
 ├── config/              # Pydantic Settings
 └── main.py
 ```
