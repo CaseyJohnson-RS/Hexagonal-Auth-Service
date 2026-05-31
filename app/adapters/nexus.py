@@ -48,24 +48,41 @@ def get_access_token_verifier() -> AccessTokenVerifierPort:
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
+import redis.asyncio as aioredis  # noqa
+
 from app.core.ports.services import EventPublisherPort, EventQueuePort  # noqa
+from app.core.ports.services import NotificationPort  # noqa
 from app.adapters.outbound.event_bus.in_memory import (  # noqa
-    InMemoryEventQueue,
+    InMemoryNotificationQueue,
     EventPublisher,
 )
+from app.adapters.outbound.event_bus.redis import RedisEventQueue  # noqa
+from app.infrastructure.redis.client import make_redis_client  # noqa
 
-_event_queue: EventQueuePort = InMemoryEventQueue()
+# Redis client — one connection pool for the whole process.
+_redis_client: aioredis.Redis = make_redis_client()
+
+_event_queue: EventQueuePort = RedisEventQueue(client=_redis_client)
+_notification_queue: NotificationPort = InMemoryNotificationQueue()
+
+
+def get_redis_client() -> aioredis.Redis:
+    return _redis_client
 
 
 def get_event_queue() -> EventQueuePort:
-    global _event_queue
     return _event_queue
+
+
+def get_notification_queue() -> NotificationPort:
+    return _notification_queue
 
 
 def get_event_publisher(
     event_queue: EventQueuePort = Depends(get_event_queue),
+    notifications: NotificationPort = Depends(get_notification_queue),
 ) -> EventPublisherPort:
-    return EventPublisher(event_queue)
+    return EventPublisher(queue=event_queue, notifications=notifications)
 
 
 # ==============================================================================
@@ -130,7 +147,9 @@ __all__ = [
     "get_config",
     "get_access_token_issuer",
     "get_access_token_verifier",
+    "get_redis_client",
     "get_event_queue",
+    "get_notification_queue",
     "get_event_publisher",
     "get_session",
     "get_transaction",

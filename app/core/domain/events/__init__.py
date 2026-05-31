@@ -8,4 +8,14 @@ class BaseEvent(BaseModel):
 
 
 class DomainEvent(BaseEvent):
+    """Audit-safe event — stored in the persistent event log."""
+    pass
+
+
+class NotificationEvent(BaseEvent):
+    """Carries sensitive token data (OTT strings).
+
+    Routed to NotificationPort only — never written to the audit log
+    or any persistent store.
+    """
     pass

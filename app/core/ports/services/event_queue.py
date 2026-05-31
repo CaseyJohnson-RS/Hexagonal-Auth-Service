@@ -1,13 +1,11 @@
-from typing import Iterable, Protocol
+from typing import Protocol
+
 from app.core.domain.events import BaseEvent
 
 
 class EventQueuePort(Protocol):
-    def push(self, event: BaseEvent) -> None:
-        pass
+    async def push(self, event: BaseEvent) -> None: ...
 
-    def extend(self, events: Iterable[BaseEvent]) -> None:
-        pass
-
-    def get(self, offset: int, limit: int, desc: bool) -> list[BaseEvent]:
-        pass
+    async def get(
+        self, offset: int, limit: int, desc: bool = False
+    ) -> list[BaseEvent]: ...

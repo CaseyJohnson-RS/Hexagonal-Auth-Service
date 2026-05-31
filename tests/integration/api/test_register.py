@@ -9,23 +9,29 @@ class TestRegister:
         )
         assert resp.status_code == 200
 
-    async def test_register_emits_verification_event(self, client, event_queue):
+    async def test_register_emits_verification_event(self, client, notification_queue):
         await client.post(
             "/auth/api/register", json={"email": EMAIL, "password": PASSWORD}
         )
-        events = [e for e in event_queue._events if isinstance(e, UserEmailVerificationRequested)]
+        events = [
+            e for e in notification_queue.get_all()
+            if isinstance(e, UserEmailVerificationRequested)
+        ]
         assert len(events) == 1
         assert events[0].email == EMAIL
         assert events[0].token  # non-empty token string
 
-    async def test_register_unverified_user_again_succeeds(self, client, event_queue):
+    async def test_register_unverified_user_again_succeeds(self, client, notification_queue):
         await client.post("/auth/api/register", json={"email": EMAIL, "password": PASSWORD})
-        event_queue._events.clear()
+        notification_queue.clear()
         resp = await client.post(
             "/auth/api/register", json={"email": EMAIL, "password": PASSWORD}
         )
         assert resp.status_code == 200
-        events = [e for e in event_queue._events if isinstance(e, UserEmailVerificationRequested)]
+        events = [
+            e for e in notification_queue.get_all()
+            if isinstance(e, UserEmailVerificationRequested)
+        ]
         assert len(events) == 1
 
     async def test_register_verified_user_returns_400(self, client, verified):
@@ -52,7 +58,7 @@ class TestRegister:
         )
         assert resp.status_code == 400
 
-    async def test_two_different_emails_register_independently(self, client, event_queue):
+    async def test_two_different_emails_register_independently(self, client, notification_queue):
         r1 = await client.post(
             "/auth/api/register",
             json={"email": "user1@example.com", "password": PASSWORD},
@@ -63,7 +69,10 @@ class TestRegister:
         )
         assert r1.status_code == 200
         assert r2.status_code == 200
-        events = [e for e in event_queue._events if isinstance(e, UserEmailVerificationRequested)]
+        events = [
+            e for e in notification_queue.get_all()
+            if isinstance(e, UserEmailVerificationRequested)
+        ]
         assert len(events) == 2
         tokens = {e.email: e.token for e in events}
         assert tokens["user1@example.com"] != tokens["user2@example.com"]
@@ -90,12 +99,12 @@ class TestVerifyEmail:
         assert resp.status_code == 400
 
     async def test_verify_email_from_different_user_cannot_verify_another(
-        self, client, event_queue
+        self, client, notification_queue
     ):
         await client.post(
             "/auth/api/register", json={"email": "a@example.com", "password": PASSWORD}
         )
-        token_a = get_verify_token(event_queue)
+        token_a = get_verify_token(notification_queue)
         await client.post(
             "/auth/api/register", json={"email": "b@example.com", "password": PASSWORD}
         )
@@ -104,5 +113,5 @@ class TestVerifyEmail:
         resp = await client.post(
             "/auth/api/verify_email", json={"one_time_token": token_a}
         )
-        # Token a already used → second verify should be for a, not b — still valid
+        # Token a still valid — verifies user a, not b
         assert resp.status_code == 200

@@ -4,7 +4,22 @@ import bcrypt as _bcrypt
 from sqlalchemy import text
 
 from app.adapters.outbound.persistence.sqlalchemy.models import Base
+from app.adapters.outbound.event_bus.in_memory import InMemoryEventQueue
 from app.infrastructure.db.postgres import engine, async_session_factory
+import app.adapters.nexus as nexus
+
+
+@pytest.fixture(scope="session", autouse=True)
+def override_event_queue():
+    """Replace RedisEventQueue with InMemoryEventQueue for the test session.
+
+    Integration tests don't require a Redis instance — audit events go to
+    an in-memory store that is isolated per test via the async_session fixture.
+    """
+    original = nexus._event_queue
+    nexus._event_queue = InMemoryEventQueue()
+    yield
+    nexus._event_queue = original
 
 
 @pytest.fixture(scope="session", autouse=True)

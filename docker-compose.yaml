@@ -24,6 +24,19 @@ services:
       postgres:
         condition: service_healthy
 
+  redis:
+    image: redis:alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   auth:
     build: .
     env_file:
@@ -31,6 +44,8 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
@@ -45,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

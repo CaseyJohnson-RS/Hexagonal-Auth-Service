@@ -78,7 +78,7 @@ class TestChangePassword:
 
 class TestPasswordRecoverRequest:
     async def test_recover_request_returns_200_for_existing_user(
-        self, client, verified, event_queue
+        self, client, verified, notification_queue
     ):
         resp = await client.post(
             "/auth/api/password/recover_request", json={"email": EMAIL}
@@ -86,12 +86,12 @@ class TestPasswordRecoverRequest:
         assert resp.status_code == 200
 
     async def test_recover_request_emits_event_with_token(
-        self, client, verified, event_queue
+        self, client, verified, notification_queue
     ):
         await client.post(
             "/auth/api/password/recover_request", json={"email": EMAIL}
         )
-        token = get_recover_token(event_queue)
+        token = get_recover_token(notification_queue)
         assert token
 
     async def test_recover_request_returns_200_for_nonexistent_user(self, client):
@@ -115,14 +115,14 @@ class TestPasswordRecoverRequest:
 class TestPasswordRecover:
     NEW_PASSWORD = "RecoveredPass99!"
 
-    async def _get_recover_token(self, client, event_queue):
+    async def _get_recover_token(self, client, notification_queue):
         await client.post(
             "/auth/api/password/recover_request", json={"email": EMAIL}
         )
-        return get_recover_token(event_queue)
+        return get_recover_token(notification_queue)
 
-    async def test_recover_returns_200(self, client, verified, event_queue):
-        token = await self._get_recover_token(client, event_queue)
+    async def test_recover_returns_200(self, client, verified, notification_queue):
+        token = await self._get_recover_token(client, notification_queue)
         resp = await client.post(
             "/auth/api/password/recover",
             json={"password_recover_token": token, "password": self.NEW_PASSWORD},
@@ -130,9 +130,9 @@ class TestPasswordRecover:
         assert resp.status_code == 200
 
     async def test_recover_allows_login_with_new_password(
-        self, client, verified, event_queue
+        self, client, verified, notification_queue
     ):
-        token = await self._get_recover_token(client, event_queue)
+        token = await self._get_recover_token(client, notification_queue)
         await client.post(
             "/auth/api/password/recover",
             json={"password_recover_token": token, "password": self.NEW_PASSWORD},
@@ -142,8 +142,8 @@ class TestPasswordRecover:
         )
         assert resp.status_code == 200
 
-    async def test_recover_blocks_old_password(self, client, verified, event_queue):
-        token = await self._get_recover_token(client, event_queue)
+    async def test_recover_blocks_old_password(self, client, verified, notification_queue):
+        token = await self._get_recover_token(client, notification_queue)
         await client.post(
             "/auth/api/password/recover",
             json={"password_recover_token": token, "password": self.NEW_PASSWORD},
@@ -161,9 +161,9 @@ class TestPasswordRecover:
         assert resp.status_code == 400
 
     async def test_recover_with_short_password_returns_400(
-        self, client, verified, event_queue
+        self, client, verified, notification_queue
     ):
-        token = await self._get_recover_token(client, event_queue)
+        token = await self._get_recover_token(client, notification_queue)
         resp = await client.post(
             "/auth/api/password/recover",
             json={"password_recover_token": token, "password": "abc"},
@@ -171,9 +171,9 @@ class TestPasswordRecover:
         assert resp.status_code == 400
 
     async def test_recover_token_cannot_be_reused(
-        self, client, verified, event_queue
+        self, client, verified, notification_queue
     ):
-        token = await self._get_recover_token(client, event_queue)
+        token = await self._get_recover_token(client, notification_queue)
         await client.post(
             "/auth/api/password/recover",
             json={"password_recover_token": token, "password": self.NEW_PASSWORD},

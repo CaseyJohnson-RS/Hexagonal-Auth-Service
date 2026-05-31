@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from . import DomainEvent
+from . import DomainEvent, NotificationEvent
 
 
 class UserEvent(DomainEvent):
-    """Base user event"""
+    """Base audit event for user actions."""
 
     user_id: UUID
 
@@ -13,7 +13,7 @@ class UserEvent(DomainEvent):
 
 
 class UserCreated(UserEvent):
-    """User account created"""
+    """User account created."""
 
     email: str
 
@@ -22,50 +22,52 @@ class UserCreated(UserEvent):
 
 
 class UserActivated(UserEvent):
-    """User account activated"""
+    """User account activated."""
 
     pass
 
 
 class UserDeactivated(UserEvent):
-    """User account deactivated"""
+    """User account deactivated."""
 
     pass
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-class UserEmailVerificationRequested(UserEvent):
-    """Email verification token issued"""
-
-    email: str
-    token: str
 
 
 class UserEmailVerified(UserEvent):
-    """User email successfully verified"""
+    """User email successfully verified."""
 
     email: str
+
+
+class UserPasswordChanged(UserEvent):
+    """User password changed."""
+
+    pass
+
+
+class UserPasswordRecovered(UserEvent):
+    """Password successfully recovered."""
+
+    pass
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-class UserPasswordChanged(UserEvent):
-    """User password changed"""
+class UserEmailVerificationRequested(NotificationEvent):
+    """Email verification token issued."""
 
-    pass
-
-
-class UserPasswordRecoverRequested(UserEvent):
-    """Password recovery token issued"""
-
+    user_id: UUID
     email: str
     token: str
 
 
-class UserPasswordRecovered(UserEvent):
-    """Password successfully recovered"""
+class UserPasswordRecoverRequested(NotificationEvent):
+    """Password recovery token issued."""
 
-    pass
+    user_id: UUID
+    email: str
+    token: str

@@ -73,7 +73,7 @@ async def events_page(
     offset = (page - 1) * per_page
 
     # Fetch events
-    events = event_queue.get(offset=offset, limit=per_page, desc=True)
+    events = await event_queue.get(offset=offset, limit=per_page, desc=True)
 
     # Prepare template data
     events_data = [
@@ -86,7 +86,7 @@ async def events_page(
     ]
 
     # Check if next page exists
-    next_page_events = event_queue.get(offset=offset + per_page, limit=1)
+    next_page_events = await event_queue.get(offset=offset + per_page, limit=1)
     has_next = len(next_page_events) > 0
     has_prev = page > 1
 

@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     def password_recover_token_expiry(self) -> timedelta:
         return timedelta(minutes=self.password_recover_token_expiry_minutes)
 
+    # Redis configuration
+    redis_url: str = "redis://localhost:6379/0"
+
     # General settings
     logging_level: str = "INFO"
 
