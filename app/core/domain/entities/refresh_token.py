@@ -145,7 +145,6 @@ class RefreshToken:
             RefreshTokenReuse: If the token has already been replaced.
             TokenError: If the token is revoked or expired.
         """
-        print(self.replaced_by_id)
         if self.replaced_by_id:
             raise RefreshTokenReuse()
         if self._is_revoked_or_expired():

@@ -1,7 +1,4 @@
-
-
-EMAIL = "login_test@example.com"
-PASSWORD = "StrongPass99!"
+from tests.integration.api.conftest import EMAIL, PASSWORD
 
 
 class TestLogin:
@@ -17,14 +14,12 @@ class TestLogin:
         assert tokens["refresh_token"]
 
     async def test_login_before_verify_returns_401(self, client, registered):
-        from tests.integration.api.conftest import EMAIL, PASSWORD
         resp = await client.post(
             "/auth/api/token", json={"email": EMAIL, "password": PASSWORD}
         )
         assert resp.status_code == 401
 
     async def test_login_wrong_password_returns_401(self, client, verified):
-        from tests.integration.api.conftest import EMAIL
         resp = await client.post(
             "/auth/api/token", json={"email": EMAIL, "password": "WrongPassword!"}
         )
@@ -38,7 +33,6 @@ class TestLogin:
         assert resp.status_code == 401
 
     async def test_login_wrong_password_does_not_reveal_user_existence(self, client, verified):
-        from tests.integration.api.conftest import EMAIL
         wrong_pass = await client.post(
             "/auth/api/token", json={"email": EMAIL, "password": "WrongPass!"}
         )
@@ -49,13 +43,11 @@ class TestLogin:
         assert wrong_pass.status_code == no_user.status_code == 401
 
     async def test_login_twice_returns_different_refresh_tokens(self, client, verified):
-        from tests.integration.api.conftest import EMAIL, PASSWORD
         r1 = await client.post("/auth/api/token", json={"email": EMAIL, "password": PASSWORD})
         r2 = await client.post("/auth/api/token", json={"email": EMAIL, "password": PASSWORD})
         assert r1.json()["refresh_token"] != r2.json()["refresh_token"]
 
     async def test_login_case_sensitive_email(self, client, verified):
-        from tests.integration.api.conftest import EMAIL, PASSWORD
         resp = await client.post(
             "/auth/api/token",
             json={"email": EMAIL.upper(), "password": PASSWORD},

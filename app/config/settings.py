@@ -55,7 +55,7 @@ class Settings(BaseSettings):
 
     @property
     def password_recover_token_expiry(self) -> timedelta:
-        return timedelta(minutes=self.access_token_expire_minutes)
+        return timedelta(minutes=self.password_recover_token_expiry_minutes)
 
     # General settings
     logging_level: str = "INFO"
