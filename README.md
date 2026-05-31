@@ -1,23 +1,50 @@
 # Auth Service — Hexagonal Architecture
 
-> **Learning project.** Built to practice Hexagonal (Ports & Adapters) Architecture with a real-world use case — an authentication microservice.
+[![CI](https://github.com/CaseyJohnson-RS/Hexagonal-Auth-Service/actions/workflows/ci.yml/badge.svg)](https://github.com/CaseyJohnson-RS/Hexagonal-Auth-Service/actions)
+![Python](https://img.shields.io/badge/Python_3.10-3776AB?style=flat&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-4169E1?style=flat&logo=postgresql&logoColor=white)
 
-An authentication microservice built with **FastAPI**. The domain core has zero framework dependencies — all infrastructure (database, HTTP, tokens) lives behind port interfaces and is injected via adapters.
+Сервис аутентификации на **FastAPI**, построенный по гексагональной архитектуре
+(Ports & Adapters). Доменное ядро не зависит ни от одного фреймворка — вся
+инфраструктура (БД, HTTP, токены, шина событий) спрятана за порт-интерфейсами и
+подключается через адаптеры. Цель проекта — показать чистую декомпозицию и
+безопасную работу с токенами на полном цикле управления учётной записью.
 
-## Architecture
+Полный цикл: регистрация → подтверждение email → вход → ротация токенов →
+смена и восстановление пароля, с журналом security-событий.
+
+## Ключевые решения
+
+- **Доменное ядро без зависимостей.** Слой `core/` не импортирует FastAPI или
+  SQLAlchemy. Порты описаны как `typing.Protocol` — адаптеры удовлетворяют их
+  структурно, без наследования от общих базовых классов.
+- **Токены хранятся только как SHA-256-хэши.** Refresh- и одноразовые токены
+  попадают в БД исключительно в хэшированном виде — сырой токен не сохраняется
+  никогда.
+- **Ротация refresh-токенов с детектом повторного использования.** При ротации
+  старый токен отзывается и помечается «заменён на …»; попытка переиспользовать
+  отозванный токен поднимает `RefreshTokenReuse`.
+- **Оптимистичные блокировки.** У сущностей версионируемое поле; `UPDATE`
+  выполняется `WHERE version = ожидаемая`, и при расхождении поднимается
+  `ConcurrencyError` (HTTP 409) — защита от потерянных обновлений при гонке.
+- **Анти-энумерация.** Запрос восстановления пароля всегда возвращает `200`,
+  чтобы по ответу нельзя было определить, существует ли учётная запись.
+
+## Архитектура
+
+Зависимости направлены строго в одну сторону: `adapters → application → core`.
 
 ```mermaid
 graph LR
   subgraph Inbound["Inbound Adapters"]
     HTTP["FastAPI Routers"]
   end
-
   subgraph App["Application Layer"]
     UC["Use Cases"]
     DTO["DTOs"]
     EVH["Event Handlers"]
   end
-
   subgraph Core["Core / Domain"]
     ENT["Entities"]
     DS["Domain Services"]
@@ -25,14 +52,12 @@ graph LR
     VAL["Validators"]
     PORTS[["Ports"]]
   end
-
   subgraph Outbound["Outbound Adapters"]
     REPO["SQLAlchemy Repos"]
     JWTA["JWT Issuer / Verifier"]
     BUS["In-Memory Event Bus"]
     TX["Transaction Manager"]
   end
-
   HTTP --> UC
   UC --> ENT
   UC --> DS
@@ -43,93 +68,128 @@ graph LR
   PORTS -.-> TX
 ```
 
-### Layer Responsibilities
+**Слои:**
 
-**Core / Domain** (`app/core/`) — Business rules with no external dependencies. Entities produce domain events; ports are defined as Python `Protocol` classes (structural subtyping, no inheritance from framework base classes).
+- **Core / Domain** (`app/core/`) — бизнес-правила без внешних зависимостей.
+  Сущности порождают доменные события; порты — это `Protocol`-классы.
+- **Application** (`app/application/`) — use cases, оркеструющие домен. Каждый
+  получает порты через конструктор, выполняется в транзакции и публикует
+  события после коммита.
+- **Adapters** (`app/adapters/`) — конкретные реализации портов: inbound (HTTP
+  через FastAPI) и outbound (PostgreSQL через SQLAlchemy, JWT, in-memory шина).
+- **Composition Root** (`app/adapters/nexus.py`) — единственное место, где порты
+  связываются с адаптерами.
 
-**Application** (`app/application/`) — Use cases that orchestrate domain logic. Each use case receives ports through constructor injection, runs within a transaction, and publishes collected domain events after commit.
+## Технологии
 
-**Adapters** (`app/adapters/`) — Concrete implementations of ports. Split into *inbound* (HTTP routing via FastAPI) and *outbound* (PostgreSQL persistence via SQLAlchemy, JWT token management, in-memory event bus).
-
-**Composition Root** (`app/adapters/nexus.py`) — Wires ports to adapter implementations using FastAPI `Depends`. Single place where all concrete types are referenced.
-
-## Project Structure
-
-```text
-app/
-├── core/                              # Domain — no framework imports
-│   ├── domain/
-│   │   ├── entities/                  # User, RefreshToken, OneTimeToken
-│   │   ├── events/                    # Domain events (UserCreated, etc.)
-│   │   ├── exceptions/                # Domain-specific errors
-│   │   ├── services/                  # EmailVerification, RefreshTokenRotation
-│   │   └── validators/                # Email & password validation
-│   ├── ports/                         # Port interfaces (Protocol classes)
-│   │   ├── repositories.py            # UserRepositoryPort, etc.
-│   │   ├── transaction.py             # TransactionPort
-│   │   └── services/                  # AccessTokenIssuerPort, EventPublisherPort, ...
-│   └── utils/                         # Security helpers, time utils
-│
-├── application/                       # Use cases
-│   ├── cases/user/                    # Register, Login, VerifyEmail, ChangePassword, ...
-│   ├── dto/                           # Input/output DTOs
-│   ├── events/                        # Application-level event handling
-│   └── exceptions/                    # Application-level errors (conflict, not found)
-│
-├── adapters/
-│   ├── inbound/http/                  # FastAPI routers, request/response schemas
-│   ├── outbound/
-│   │   ├── persistence/sqlalchemy/    # ORM models & repository implementations
-│   │   ├── access_token/              # JWT issuer & verifier adapters
-│   │   └── event_bus/in_memory/       # In-memory event queue & publisher
-│   └── nexus.py                       # Composition root (DI wiring)
-│
-├── infrastructure/db/                 # Async PostgreSQL session factory
-├── config/                            # Pydantic Settings
-└── main.py                            # FastAPI app entrypoint
-```
-
-## Key Design Decisions
-
-**Ports as Protocols** — Port interfaces use `typing.Protocol` instead of abstract base classes. Adapters satisfy them structurally — no need to inherit from a shared base.
-
-**Domain Events on Aggregates** — The `User` entity collects domain events internally (`_events` list). Use cases call `pull_domain_events()` after the operation and publish them outside the transaction boundary.
-
-**One Use Case per File** — Each application use case (`RegisterUserCase`, `LoginCase`, etc.) lives in its own module with explicit dependencies declared in `__init__`.
-
-**Transaction Port** — Transaction management is abstracted behind `TransactionPort` (async context manager protocol), keeping use cases unaware of SQLAlchemy session details.
-
-## Tech Stack
-
-| Layer | Technology |
+| Слой | Технология |
 |---|---|
-| HTTP framework | FastAPI + Uvicorn |
-| Database | PostgreSQL 15 (async via asyncpg) |
-| ORM | SQLAlchemy (async) |
-| Migrations | Alembic |
-| Auth tokens | PyJWT (access) + DB-backed refresh & one-time tokens |
-| Password hashing | passlib / bcrypt |
-| Validation | Pydantic v2 |
-| Containerization | Docker Compose |
-| Testing | pytest + pytest-asyncio + httpx |
+| HTTP | FastAPI + Uvicorn |
+| База данных | PostgreSQL 16 (async, asyncpg) |
+| ORM | SQLAlchemy 2 (async) |
+| Миграции | Alembic |
+| Токены | PyJWT (access, HS256) + refresh/одноразовые в БД (SHA-256) |
+| Хэш пароля | passlib + bcrypt |
+| Валидация / конфиг | Pydantic v2, pydantic-settings |
+| Контейнеризация | Docker, Docker Compose |
+| Зависимости | uv |
+| Линтер | Ruff |
+| Тесты | pytest + pytest-asyncio + httpx |
 
-## Getting Started
+## HTTP API
+
+Все эндпоинты под `/auth/api/`:
+
+| Метод | Путь | Назначение |
+|---|---|---|
+| POST | `/register` | Регистрация → выдаётся OTT для подтверждения email |
+| POST | `/verify_email` | Подтверждение email по OTT |
+| POST | `/token` | Вход → access + refresh |
+| POST | `/refresh` | Ротация refresh → новая пара |
+| POST | `/revoke` | Отзыв refresh-токена |
+| POST | `/password/change` | Смена пароля (Bearer + старый пароль) |
+| POST | `/password/recover_request` | Запрос восстановления (всегда 200) |
+| POST | `/password/recover` | Восстановление по одноразовому токену |
+| GET | `/auth/audit/events/` | HTML-страница журнала событий (пагинация) |
+
+## Примеры запросов
 
 ```bash
-docker compose up
+# 1. Регистрация → создаётся пользователь, выдаётся одноразовый токен (OTT) для подтверждения email
+curl -X POST http://localhost:8000/auth/api/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "strong-password"}'
 
-# API docs
-open http://localhost:8000/docs
+# 2. Подтверждение email по одноразовому токену
+curl -X POST http://localhost:8000/auth/api/verify_email \
+  -H "Content-Type: application/json" \
+  -d '{"one_time_token": "<token-из-письма>"}'
 
-# Security audit events dashboard
-open http://localhost:8000/auth/audit/events
+# 3. Вход → пара токенов
+curl -X POST http://localhost:8000/auth/api/token \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "strong-password"}'
+# → {"refresh_token": "...", "access_token": "...", "token_type": "bearer"}
+
+# 4. Ротация refresh-токена → новая пара, старый отзывается
+curl -X POST http://localhost:8000/auth/api/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "<refresh_token>"}'
+
+# 5. Смена пароля (требуется access-токен; пользователь берётся из токена)
+curl -X POST http://localhost:8000/auth/api/password/change \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"old_password": "strong-password", "new_password": "new-strong-password"}'
 ```
 
-## Features
+## Быстрый старт
 
-- User registration with email verification flow
-- Login with JWT access + refresh token pair
-- Refresh token rotation with security policy
-- Password change & password recovery via one-time tokens
-- Domain event publishing (security audit log)
-- Soft delete (user deactivation)
+```bash
+git clone https://github.com/CaseyJohnson-RS/Hexagonal-Auth-Service
+cd Hexagonal-Auth-Service
+cp .env.example .env        # заполнить JWT_SECRET и параметры БД
+docker compose up
+```
+
+- API-документация: **http://localhost:8000/docs**
+- Журнал security-событий: **http://localhost:8000/auth/audit/events**
+
+При старте автоматически применяются Alembic-миграции.
+
+## Тесты
+
+```bash
+# поднять тестовую БД
+docker compose -f docker-compose.yaml up -d db
+
+# прогнать всё
+uv run pytest
+```
+
+Тесты покрывают все уровни:
+
+- **Unit** — доменные сущности, доменные сервисы, валидаторы.
+- **Интеграционные (репозитории)** — против реальной PostgreSQL.
+- **Интеграционные (API)** — сквозные вызовы через `httpx` + `ASGITransport`.
+
+CI (`.github/workflows/ci.yml`) на каждый push гоняет линтер Ruff, затем unit- и
+интеграционные тесты против сервис-контейнера PostgreSQL 16.
+
+## Структура
+
+```
+app/
+├── core/            # домен без импортов фреймворков
+│   ├── domain/      # entities, events, services, validators, exceptions
+│   ├── ports/       # порт-интерфейсы (Protocol)
+│   └── utils/       # security- и time-хелперы
+├── application/     # use cases, DTO, обработка событий
+├── adapters/
+│   ├── inbound/http/    # FastAPI-роутеры, схемы запросов/ответов
+│   ├── outbound/        # SQLAlchemy-репозитории, JWT, in-memory шина
+│   └── nexus.py         # composition root (DI)
+├── infrastructure/db/   # async-фабрика сессий PostgreSQL
+├── config/              # Pydantic Settings
+└── main.py
+```
