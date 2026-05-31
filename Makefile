@@ -24,6 +24,10 @@ test-unit:
 test-integration: migrate
 	uv run --env-file .env.test pytest tests/integration
 
+test-integration-ci:
+	uv run --env-file .env.test alembic upgrade head
+	uv run --env-file .env.test pytest tests/integration
+
 test-all: test-unit test-integration
 
 # Linting

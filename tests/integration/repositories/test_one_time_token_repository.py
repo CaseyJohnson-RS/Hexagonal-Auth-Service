@@ -190,13 +190,10 @@ class TestOneTimeTokenRepositoryDelete:
         assert await ott_repo.get_by_string("keep-this") is not None
         assert await ott_repo.get_by_string("delete-this") is None
 
-    async def test_delete_user_with_tokens_raises_integrity_error(
+    async def test_delete_user_cascades_to_tokens(
         self, user_repo, ott_repo, saved_user
     ):
-        # UserRepository.delete() uses raw SQL DELETE — no ORM cascade.
-        # PostgreSQL FK constraint blocks deletion if child rows exist.
-        from sqlalchemy.exc import IntegrityError
         token = make_one_time_token(user_id=saved_user.id, token_string="fk-ott")
         await ott_repo.save(token)
-        with pytest.raises(IntegrityError):
-            await user_repo.delete(saved_user)
+        await user_repo.delete(saved_user)
+        assert await ott_repo.get_by_string("fk-ott") is None
