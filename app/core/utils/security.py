@@ -1,23 +1,19 @@
 import hashlib
 import secrets
 
-from passlib.context import CryptContext
-
-
-pwd_context = CryptContext(schemes=["bcrypt"], default="bcrypt", deprecated="auto")
+import bcrypt as _bcrypt
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return pwd_context.verify(password, hashed)
+    return _bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 def generate_token(length: int = 32) -> str:
-    token = secrets.token_urlsafe(length)
-    return token
+    return secrets.token_urlsafe(length)
 
 
 def hash_token(token: str) -> str:

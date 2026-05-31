@@ -1,20 +1,21 @@
 import pytest
-from passlib.context import CryptContext
+import bcrypt as _bcrypt
 
 
 @pytest.fixture(scope="session", autouse=True)
 def fast_hash():
-    """Swap bcrypt for pbkdf2_sha256 for the entire unit test session.
+    """Use bcrypt rounds=4 instead of the default 12 for the test session.
 
-    passlib 1.7.4 is incompatible with bcrypt >=5.x (the wrap-bug detection
-    probe exceeds bcrypt's new 72-byte hard limit). pbkdf2_sha256 is pure
-    Python, requires no native library, and is ~100x faster — the hash/verify
-    round-trip still works correctly because both operations go through the
-    same patched context.
+    bcrypt with rounds=4 is ~200x faster than rounds=12 and still exercises
+    the full hash/verify path correctly.
     """
     import app.core.utils.security as sec
 
-    original = sec.pwd_context
-    sec.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
+    original = sec.hash_password
+
+    def _fast_hash(password: str) -> str:
+        return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt(rounds=4)).decode()
+
+    sec.hash_password = _fast_hash
     yield
-    sec.pwd_context = original
+    sec.hash_password = original

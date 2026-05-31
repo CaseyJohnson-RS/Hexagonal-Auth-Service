@@ -1,5 +1,5 @@
 import pytest
-from passlib.context import CryptContext
+import bcrypt as _bcrypt
 
 from sqlalchemy import text
 
@@ -9,16 +9,21 @@ from app.infrastructure.db.postgres import engine, async_session_factory
 
 @pytest.fixture(scope="session", autouse=True)
 def fast_hash():
-    """Replace bcrypt with pbkdf2_sha256 for the test session.
+    """Use bcrypt rounds=4 instead of the default 12 for the test session.
 
-    passlib 1.7.4 + bcrypt 5.x: detect_wrap_bug internally hashes a 73-byte
-    password which bcrypt 5.x hard-rejects. pbkdf2_sha256 has no such limit.
+    bcrypt with rounds=4 is ~200x faster than rounds=12 and still exercises
+    the full hash/verify path correctly.
     """
     import app.core.utils.security as sec
-    original = sec.pwd_context
-    sec.pwd_context = CryptContext(schemes=["pbkdf2_sha256"])
+
+    original = sec.hash_password
+
+    def _fast_hash(password: str) -> str:
+        return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt(rounds=4)).decode()
+
+    sec.hash_password = _fast_hash
     yield
-    sec.pwd_context = original
+    sec.hash_password = original
 
 
 @pytest.fixture(scope="function")
@@ -30,4 +35,3 @@ async def async_session():
         yield session
 
     await engine.dispose()  # It's necessary, lol
-
