@@ -4,7 +4,7 @@ from app.core.domain.validators.email import validate_email
 from app.core.domain.exceptions.validation import EmailValidationError
 
 
-# ── required guard ────────────────────────────────────────────────────────────
+# ── required guard ───────────────────────────────────────────────────────────
 
 class TestEmailRequired:
     def test_none_raises_required(self):
@@ -31,7 +31,7 @@ class TestEmailRequired:
             validate_email("   ")
 
 
-# ── normalisation ─────────────────────────────────────────────────────────────
+# ── normalisation ────────────────────────────────────────────────────────────
 
 class TestEmailNormalisation:
     def test_strips_surrounding_whitespace(self):
@@ -47,7 +47,7 @@ class TestEmailNormalisation:
         assert validate_email("user@example.com") == "user@example.com"
 
 
-# ── valid formats ─────────────────────────────────────────────────────────────
+# ── valid formats ────────────────────────────────────────────────────────────
 
 class TestValidEmailFormats:
     def test_standard_address(self):
@@ -72,7 +72,7 @@ class TestValidEmailFormats:
         assert validate_email("user@my-company.com") == "user@my-company.com"
 
 
-# ── invalid formats ───────────────────────────────────────────────────────────
+# ── invalid formats ──────────────────────────────────────────────────────────
 
 class TestInvalidEmailFormats:
     def test_missing_at_sign(self):

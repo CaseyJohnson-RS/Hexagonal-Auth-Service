@@ -37,11 +37,11 @@ class RefreshTokenRotationService:
         )
 
         # 2. Mark old token as replaced
-        old_token.mark_as_replaced_by(old_token.id)
+        old_token.mark_as_replaced_by(new_rt.id)
 
         # 3. Issue new access token
         access_token = access_token_issuer.issue(
-            old_token.user_id, access_token_expiry
+            new_rt.user_id, access_token_expiry
         )
 
         return new_rt, new_rt_str, access_token

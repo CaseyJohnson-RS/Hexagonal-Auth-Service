@@ -21,3 +21,8 @@ migrate:
 
 run: db-up migrate
 	docker compose up auth	
+
+# Testing
+
+test-unit:
+	uv run --env-file .env.example pytest

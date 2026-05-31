@@ -7,6 +7,7 @@ from app.application.exceptions.not_found import (
     UserNotFound,
 )
 
+from app.core.domain.entities.one_time_token import OneTimeTokenPurpose
 from app.core.domain.events import BaseEvent
 from app.core.ports.repositories import (
     OneTimeTokenRepositoryPort,
@@ -67,6 +68,9 @@ class PasswordRecoverCase(UseCase):
 
             # 3. Update password
             user.recover_password(data.password)
+
+            # 4. Use token
+            ott.use(OneTimeTokenPurpose.RECOVER_PASSWORD)
 
             # = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
